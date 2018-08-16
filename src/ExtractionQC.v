@@ -10,7 +10,7 @@ From QuickChick Require Import
 Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 Require Import ExtrOcamlNatInt.
-Require Import ExtrOcamlZInt.
+Require Import ExtrOcamlZBigInt.
 
 Extraction Blacklist String List Nat.
 
@@ -36,13 +36,13 @@ Extract Constant show_bool =>
 
 Extract Constant show_Z =>
   "(fun i ->
-  let s = string_of_int i in
+  let s = Big_int_Z.string_of_big_int i in
   let rec copy acc i =
     if i < 0 then acc else copy (s.[i] :: acc) (i-1)
   in copy [] (String.length s - 1))".
 Extract Constant show_N =>
   "(fun i ->
-  let s = string_of_int i in
+  let s = Big_int_Z.string_of_big_int i in
   let rec copy acc i =
     if i < 0 then acc else copy (s.[i] :: acc) (i-1)
   in copy [] (String.length s - 1))".
@@ -56,9 +56,21 @@ Extract Constant randomRNat  =>
   "(fun (x,y) r -> if y < x then failwith ""choose called with unordered arguments"" else  (x + (Random.State.int r (y - x + 1)), r))".
 Extract Constant randomRBool => "(fun _ r -> Random.State.bool r, r)".
 Extract Constant randomRInt  =>
-  "(fun (x,y) r -> if y < x then failwith ""choose called with unordered arguments"" else  (x + (Random.State.int r (y - x + 1)), r))".
+  "(fun (x,y) r ->
+   if Big_int_Z.lt_big_int y x
+   then failwith ""choose called with unordered arguments""
+   else
+    let range_Z = Big_int_Z.succ_big_int (Big_int_Z.sub_big_int y x) in
+    let range_int = Big_int_Z.int_of_big_int range_Z in
+    (Big_int_Z.add_big_int x (Big_int_Z.big_int_of_int (Random.State.int r range_int)), r))".
 Extract Constant randomRN =>
-  "(fun (x,y) r -> if y < x then failwith ""choose called with unordered arguments"" else  (x + (Random.State.int r (y - x + 1)), r))".
+  "(fun (x,y) r ->
+   if Big_int_Z.lt_big_int y x
+   then failwith ""choose called with unordered arguments""
+   else
+    let range_Z = Big_int_Z.succ_big_int (Big_int_Z.sub_big_int y x) in
+    let range_int = Big_int_Z.int_of_big_int range_Z in
+    (Big_int_Z.add_big_int x (Big_int_Z.big_int_of_int (Random.State.int r range_int)), r))".
 Extract Constant newRandomSeed => "(Random.State.make_self_init ())".
 
 Extract Inductive Lazy => "Lazy.t" [lazy].
