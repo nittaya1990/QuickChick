@@ -6,6 +6,9 @@ defaults: &defaults
     OPAMVERBOSE: 1
     OPAMYES: true
     TERM: xterm
+    SKIP_BUILD: |
+      coq-async-test
+      coq-http
   parameters:
     coq:
       type: string
@@ -79,6 +82,8 @@ commands:
           PACKAGES=`opam list -s --depends-on coq-quickchick --coinstallable-with $PINS`
           for PACKAGE in $PACKAGES
           do DEPS_FAILED=false
+             echo $SKIP_BUILD | tr ' ' '\n' | grep ^$PACKAGE$ > /dev/null &&
+               echo Skip $PACKAGE && continue
              opam install --deps-only $PACKAGE || DEPS_FAILED=true
              [ $DEPS_FAILED == true ] || opam install -t $PACKAGE
           done
@@ -103,9 +108,9 @@ jobs:
     - prepare
     - run: opam pin -n add coq-quickchick .
     - run: make compat && dune build
-    - run: dune install quickchick
+    - run: dune install coq-quickchick
     - test
-    - run: dune uninstall quickchick
+    - run: dune uninstall coq-quickchick
 
 workflows:
   version: 2
@@ -125,19 +130,22 @@ workflows:
           coq: 8.12-ocaml-4.11-flambda
       - opam:
           name: OPAM 8.13
-          coq: 8.13-ocaml-4.11-flambda
+          coq: 8.13-ocaml-4.13-flambda
       - dune:
           name: Dune 8.13
-          coq: 8.13-ocaml-4.11-flambda
+          coq: 8.13-ocaml-4.13-flambda
       - opam:
           name: OPAM 8.14
           coq: 8.14-ocaml-4.12-flambda
       - dune:
           name: Dune 8.14
           coq: 8.14-ocaml-4.12-flambda
+      - dune:
+          name: Dune latest
+          coq: latest-ocaml-4.13-flambda
       - opam:
           name: OPAM dev
-          coq: dev-ocaml-4.11-flambda
+          coq: dev-ocaml-4.13-flambda
       - dune:
           name: Dune dev
-          coq: dev-ocaml-4.11-flambda
+          coq: dev-ocaml-4.13-flambda
